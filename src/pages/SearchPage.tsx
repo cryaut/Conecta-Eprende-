@@ -17,10 +17,12 @@ interface Provider {
 }
 
 export default function SearchPage() {
-  const { query, setQuery, city, setCity } = useSearchStore();
+  const { query, setQuery, city, setCity, hoveredProviderId, setHoveredProviderId } = useSearchStore();
   const [localQuery, setLocalQuery] = useState(query);
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [aiIntent, setAiIntent] = useState<any>(null);
+  const [mapBounds, setMapBounds] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   // Normal Sync back to store safely
   useEffect(() => {
@@ -34,12 +36,20 @@ export default function SearchPage() {
 
   // Fetch Providers via API
   const { data: providers = [], isLoading, isError } = useQuery({
-    queryKey: ['providers', query, city, aiIntent?.category],
+    queryKey: ['providers', query, city, aiIntent?.category, mapBounds],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (query) params.append('q', query);
       if (city) params.append('city', city);
       if (aiIntent?.category) params.append('q', aiIntent.category); // Use AI intent category if exists
+
+      if (mapBounds) {
+        params.append('n', mapBounds.getNorth().toString());
+        params.append('s', mapBounds.getSouth().toString());
+        params.append('e', mapBounds.getEast().toString());
+        params.append('w', mapBounds.getWest().toString());
+      }
+
       const res = await fetch(`/api/providers/search?${params.toString()}`);
       if (!res.ok) throw new Error("Search failed");
       const json = await res.json();
@@ -83,14 +93,14 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="flex flex-col-reverse md:flex-row h-full w-full bg-slate-50 relative overflow-hidden">
+    <div className="flex flex-col md:flex-row h-full w-full bg-slate-50 relative overflow-hidden">
       
       {/* Left Sidebar - Search & List */}
       <motion.div 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 25 }}
-        className="w-full md:w-[450px] lg:w-[480px] flex flex-col bg-white border-t md:border-t-0 border-slate-200 z-10 relative shadow-[10px_0_40px_-10px_rgba(0,0,0,0.1)] shrink-0 h-[65%] md:h-full md:rounded-tr-3xl md:border-r"
+        className={`w-full md:w-[450px] lg:w-[480px] flex flex-col bg-white border-t md:border-t-0 border-slate-200 z-10 relative shadow-[10px_0_40px_-10px_rgba(0,0,0,0.1)] shrink-0 h-full md:rounded-tr-3xl md:border-r ${viewMode === 'map' ? 'hidden md:flex' : 'flex'}`}
       >
         <div className="px-6 md:px-8 py-6 border-b border-slate-100 shrink-0 bg-white md:rounded-tr-3xl relative z-10">
           <div className="flex justify-between items-center mb-6">
@@ -197,8 +207,10 @@ export default function SearchPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   key={p.id}
+                  onMouseEnter={() => setHoveredProviderId(p.id)}
+                  onMouseLeave={() => setHoveredProviderId(null)}
                 >
-                  <Link to={`/proveedor/${p.id}`} className="block p-5 bg-white border border-slate-200 rounded-[1.25rem] shadow-sm hover:shadow-xl hover:-translate-y-1 focus:ring-4 focus:ring-blue-500/20 transition-all cursor-pointer group outline-none overflow-hidden relative">
+                  <Link to={`/proveedor/${p.id}`} className={`block p-5 border rounded-[1.25rem] shadow-sm hover:shadow-xl hover:-translate-y-1 focus:ring-4 focus:ring-blue-500/20 transition-all cursor-pointer group outline-none overflow-hidden relative ${hoveredProviderId === p.id ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500/10' : 'bg-white border-slate-200'}`}>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-indigo-50/20 translate-x-12 -translate-y-8 rounded-full blur-2xl group-hover:bg-blue-100/40 transition-colors"></div>
                     
                     <div className="relative z-10">
@@ -228,8 +240,30 @@ export default function SearchPage() {
       </motion.div>
 
       {/* Right Content - Map */}
-      <div className="flex-1 bg-slate-200 relative min-h-0 md:min-h-full">
-        <ProviderMap providers={providers} focusCity={city} />
+      <div className={`flex-1 bg-slate-200 relative min-h-0 md:min-h-full ${viewMode === 'list' ? 'hidden md:block' : 'block'}`}>
+        <ProviderMap
+          providers={providers}
+          focusCity={city}
+          hoveredProviderId={hoveredProviderId}
+          onBoundsChange={(bounds) => {
+            setMapBounds(bounds);
+            // Optionally switch to list if bounds change? No, better stay in map if user is moving map.
+          }}
+        />
+      </div>
+
+      {/* Mobile Toggle Button */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[2000] md:hidden">
+        <button
+          onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
+          className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-bold rounded-full shadow-2xl active:scale-95 transition-all"
+        >
+          {viewMode === 'list' ? (
+            <><MapPin className="w-4 h-4" /> Ver Mapa</>
+          ) : (
+            <><Filter className="w-4 h-4" /> Ver Lista</>
+          )}
+        </button>
       </div>
     </div>
   );

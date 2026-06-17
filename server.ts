@@ -40,19 +40,8 @@ async function startServer() {
       if (!parsed.success) {
         return res.status(400).json({ error: "Parámetros de búsqueda inválidos", details: parsed.error.issues });
       }
-      const { q, city } = parsed.data;
+      const { q, city, n, s, e, w } = parsed.data;
       
-      const filters: any = {};
-      if (city) {
-        filters.city = city.toUpperCase();
-      }
-      if (q) {
-        filters.OR = [
-          { displayName: { contains: q, mode: 'insensitive' } },
-          { category: { contains: q, mode: 'insensitive' } }
-        ];
-      }
-
       // Map memory providers slightly adjusting their properties to match Prisma types where requested
       const results = providers.filter(p => {
         let match = true;
@@ -63,6 +52,17 @@ async function startServer() {
           const lowerQ = q.toLowerCase();
           match = match && (p.displayName.toLowerCase().includes(lowerQ) || p.category.toLowerCase().includes(lowerQ));
         }
+
+        // Bounding box filter
+        if (n && s && e && w) {
+          const north = parseFloat(n);
+          const south = parseFloat(s);
+          const east = parseFloat(e);
+          const west = parseFloat(w);
+
+          match = match && (p.lat <= north && p.lat >= south && p.lng <= east && p.lng >= west);
+        }
+
         return match;
       });
 

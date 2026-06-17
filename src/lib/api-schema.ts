@@ -14,6 +14,10 @@ export const quoteRequestSchema = z.object({
 export const searchProviderSchema = z.object({
   q: z.string().optional(),
   city: z.string().optional(),
+  n: z.string().optional(),
+  s: z.string().optional(),
+  e: z.string().optional(),
+  w: z.string().optional(),
 });
 
 export const aiSearchProviderSchema = z.object({
