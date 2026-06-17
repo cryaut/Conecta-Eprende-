@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum City {
+  MANAGUA
+  LEON
+  GRANADA
+  MASAYA
+  ESTELI
+  MATAGALPA
+  BLUEFIELDS
+  JUIGALPA
+  NAGAROTE
+  SAN_JUAN_DE_ORIENTE
+}
+
+enum FormalizationStatus {
+  INFORMAL
+  EN_PROCESO
+  MIPYME_REGISTRADO
+  DGI_ACTIVO
+}
+
+enum Availability {
+  DISPONIBLE
+  OCUPADO
+  NO_DISPONIBLE
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  name           String?
+  image          String?
+  role           String         @default("USER") // USER | PROVIDER | ADMIN
+  createdAt      DateTime       @default(now())
+  provider       Provider?
+  sentQuotes     QuoteThread[]  @relation("Sender")
+  reviewsWritten Review[]       @relation("Reviewer")
+  accounts       Account[]
+  sessions       Session[]
+}
+
+model Provider {
+  id                  String               @id @default(cuid())
+  userId              String               @unique
+  user                User                 @relation(fields: [userId], references: [id])
+  displayName         String
+  bio                 String?
+  category            String
+  subcategories       String[]
+  city                City
+  
+  // Geo extension column (PostGIS setup required manually)
+  location            Unsupported("geography(Point, 4326)")?
+  
+  priceMin            Int?
+  priceMax            Int?
+  availability        Availability         @default(DISPONIBLE)
+  responseTimeHrs     Float?
+  photos              String[]
+  verified            Boolean              @default(false)
+  formalizationStatus FormalizationStatus  @default(INFORMAL)
+  profileCompleteness Float                @default(0)
+  trustScore          TrustScore?
+  reviewsReceived     Review[]             @relation("Reviewee")
+  quoteThreads        QuoteThread[]        @relation("Provider")
+  checklistState      FormalizationChecklist?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([city])
+  @@index([category])
+  @@index([availability])
+}
+
+model TrustScore {
+  id                 String   @id @default(cuid())
+  providerId         String   @unique
+  provider           Provider @relation(fields: [providerId], references: [id])
+  scoreCompleteness  Float
+  scoreTransactions  Float
+  scoreResponseTime  Float
+  scoreReviews       Float
+  scoreFormalization Float
+  finalScore         Float
+  algorithmVersion   String   @default("v1-rule-based")
+  features           Json?
+  computedAt         DateTime @default(now())
+
+  @@index([finalScore])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  providerId String
+  provider   Provider @relation("Reviewee", fields: [providerId], references: [id])
+  reviewerId String
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  rating     Int
+  comment    String?
+  sentiment  Float?
+  createdAt  DateTime @default(now())
+
+  @@index([providerId])
+}
+
+model QuoteThread {
+  id         String         @id @default(cuid())
+  senderId   String
+  sender     User           @relation("Sender", fields: [senderId], references: [id])
+  providerId String
+  provider   Provider       @relation("Provider", fields: [providerId], references: [id])
+  subject    String
+  status     String         @default("OPEN")
+  messages   QuoteMessage[]
+  createdAt  DateTime       @default(now())
+
+  @@index([senderId])
+  @@index([providerId])
+}
+
+model QuoteMessage {
+  id             String      @id @default(cuid())
+  threadId       String
+  thread         QuoteThread @relation(fields: [threadId], references: [id])
+  authorId       String
+  body           String
+  aiDrafted      Boolean     @default(false)
+  approvedByUser Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+
+  @@index([threadId])
+}
+
+model FormalizationChecklist {
+  id         String   @id @default(cuid())
+  providerId String   @unique
+  provider   Provider @relation(fields: [providerId], references: [id])
+  steps      Json
+  updatedAt  DateTime @updatedAt
+}
+
+model Account {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}

@@ -1,0 +1,11 @@
+Stack: Vite + React + Express + TypeScript + Tailwind + Prisma + PostgreSQL/PostGIS.
+Idioma: TODOS los strings user-facing en español de Nicaragua.
+Conventions:
+- Validar todo input con Zod.
+- Errores: throw Error con mensaje en español; logs en inglés.
+- Para queries geo, usar prisma.$queryRaw con ST_Distance / ST_DWithin.
+- No suponer Google Maps; SIEMPRE Leaflet + OpenStreetMap.
+- No CARTO tiles. Solo tile.openstreetmap.org.
+- LLM calls SIEMPRE con try/catch + fallback keyword.
+- MCP outputs SIEMPRE pasan por privacy-middleware. NUNCA exponer email, phone, ruc, cedula.
+File naming: kebab-case para archivos, PascalCase para componentes.
