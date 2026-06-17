@@ -84,7 +84,7 @@ export default function QuotesPage() {
                   placeholder="Buscar mensajes..." 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-[1.5rem] py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function QuotesPage() {
                          </div>
                       )}
                       <div>
-                        <div className={`rounded-2xl px-5 py-3.5 text-[15px] shadow-sm leading-relaxed ${
+                        <div className={`rounded-3xl px-5 py-3.5 text-[15px] shadow-sm leading-relaxed ${
                           isMine 
                             ? 'bg-blue-600 border border-blue-700/50 text-white rounded-br-sm' 
                             : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'
@@ -226,7 +226,7 @@ export default function QuotesPage() {
                     onChange={(e) => setReply(e.target.value)}
                     disabled={activeThread.status === 'CLOSED'}
                     placeholder={activeThread.status === 'CLOSED' ? "Esta cotización ha sido cerrada." : "Escribe tu respuesta comercial..."}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-5 pr-14 py-3.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:opacity-60 disabled:bg-slate-100 font-medium resize-none max-h-32 shadow-sm transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-3xl pl-5 pr-14 py-3.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:opacity-60 disabled:bg-slate-100 font-medium resize-none max-h-32 shadow-sm transition-all"
                     rows={1}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {

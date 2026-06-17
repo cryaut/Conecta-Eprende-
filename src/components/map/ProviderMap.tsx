@@ -180,7 +180,7 @@ export default function ProviderMap({
                 </div>
                 <a 
                   href={`/proveedor/${p.id}`} 
-                  className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                  className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-[1.5rem] transition-colors shadow-sm"
                 >
                   Ver perfil <ArrowRight className="w-3.5 h-3.5" />
                 </a>
@@ -215,7 +215,7 @@ export default function ProviderMap({
         <button
           onClick={handleLocateMe}
           title="Mi ubicación"
-          className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-slate-700 hover:text-blue-600 transition-all border border-slate-200 active:scale-90"
+          className="w-12 h-12 bg-white rounded-3xl shadow-xl flex items-center justify-center text-slate-700 hover:text-blue-600 transition-all border border-slate-200 active:scale-90"
         >
           <Navigation className="w-5 h-5 fill-current" />
         </button>

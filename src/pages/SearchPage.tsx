@@ -1,6 +1,6 @@
 import { useSearchStore } from "../stores/search-store";
 import ProviderMap from "../components/map/ProviderMap";
-import { Search, Zap, MapPin, Sparkles, Filter, AlertCircle } from "lucide-react";
+import { Search, Zap, MapPin, Sparkles, Filter, AlertCircle, ShieldCheck, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -93,43 +93,53 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full w-full bg-slate-50 relative overflow-hidden">
+    <div className="flex flex-col md:flex-row h-full w-full bg-white relative overflow-hidden">
       
       {/* Left Sidebar - Search & List */}
       <motion.div 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 25 }}
-        className={`w-full md:w-[450px] lg:w-[480px] flex flex-col bg-white border-t md:border-t-0 border-slate-200 z-10 relative shadow-[10px_0_40px_-10px_rgba(0,0,0,0.1)] shrink-0 h-full md:rounded-tr-3xl md:border-r ${viewMode === 'map' ? 'hidden md:flex' : 'flex'}`}
+        className={`w-full md:w-[460px] lg:w-[500px] flex flex-col bg-white border-t md:border-t-0 border-slate-100 z-10 relative shadow-[20px_0_60px_-15px_rgba(0,0,0,0.03)] shrink-0 h-full md:rounded-tr-[3rem] md:border-r ${viewMode === 'map' ? 'hidden md:flex' : 'flex'}`}
       >
-        <div className="px-6 md:px-8 py-6 border-b border-slate-100 shrink-0 bg-white md:rounded-tr-3xl relative z-10">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Buscar</h2>
-            <button className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
-               <Filter className="w-4 h-4" />
+        <div className="px-6 md:px-8 pt-8 pb-6 shrink-0 bg-white md:rounded-tr-[3rem] relative z-10">
+          <div className="flex justify-between items-end mb-8 px-1">
+            <div>
+              <h2 className="text-4xl font-[900] text-slate-900 tracking-tight">Directorio</h2>
+              <p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-wider">Nicaragua Conecta</p>
+            </div>
+            <button className="w-12 h-12 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-all active:scale-90">
+               <Filter className="w-5 h-5" />
             </button>
           </div>
           
-          <div className="relative mb-5 flex gap-3">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Ej: diseñador en managua..." 
-                value={localQuery}
-                onChange={(e) => setLocalQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition-all font-medium text-[15px] shadow-sm"
-              />
+          <div className="relative mb-6">
+            <div className="relative group bg-slate-50 rounded-[2rem] p-1.5 border-2 border-slate-50 focus-within:border-blue-600/20 focus-within:bg-white focus-within:shadow-xl focus-within:shadow-blue-600/5 transition-all duration-300">
+              <div className="flex items-center gap-3 pl-4 pr-1.5 py-1.5">
+                <div className="w-10 h-10 rounded-[1.5rem] bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/30">
+                  <Search className="w-5 h-5 text-white stroke-[3]" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="¿A quién buscas hoy?"
+                  value={localQuery}
+                  onChange={(e) => setLocalQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
+                  className="flex-1 bg-transparent border-none focus:ring-0 font-bold text-lg text-slate-800 placeholder:text-slate-300 outline-none"
+                />
+                <button
+                  onClick={handleAiSearch}
+                  disabled={isAiSearching || !localQuery.trim()}
+                  className={`w-12 h-12 rounded-[1.5rem] flex items-center justify-center transition-all ${isAiSearching ? 'bg-purple-100 text-purple-600' : 'bg-slate-900 text-white hover:bg-purple-600 shadow-md active:scale-95'}`}
+                >
+                  <Zap className={`w-5 h-5 ${isAiSearching ? 'animate-pulse' : ''}`} />
+                </button>
+              </div>
             </div>
-            <button 
-              onClick={handleAiSearch}
-              disabled={isAiSearching || !localQuery.trim()}
-              title="Búsqueda Inteligente"
-              className="px-5 py-4 bg-purple-600 text-white shadow-md hover:shadow-purple-600/30 hover:bg-purple-700 rounded-2xl transition-all disabled:opacity-50 active:scale-95"
-            >
-               <Zap className={`w-5 h-5 ${isAiSearching ? 'animate-pulse' : ''}`} />
-            </button>
+            <div className="mt-3 px-4 flex items-center gap-2">
+               <Sparkles className="w-3.5 h-3.5 text-purple-500 fill-purple-500" />
+               <p className="text-xs font-bold text-slate-400">Prueba: "Un electricista rápido en León"</p>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -140,7 +150,7 @@ export default function SearchPage() {
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-5 overflow-hidden"
               >
-                <div className="text-xs font-medium bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-xl border border-purple-100 flex items-start gap-3 shadow-inner">
+                <div className="text-xs font-medium bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-[1.5rem] border border-purple-100 flex items-start gap-3 shadow-inner">
                   <div className="bg-purple-200/50 p-1.5 rounded-lg shrink-0 mt-0.5">
                     <Sparkles className="w-4 h-4 text-purple-700" />
                   </div>
@@ -161,7 +171,7 @@ export default function SearchPage() {
               <button 
                 key={c}
                 onClick={() => setCity(city === c ? null : c)}
-                className={`px-4 py-2 text-sm font-bold rounded-xl border transition-all shrink-0 snap-start ${
+                className={`px-4 py-2 text-sm font-bold rounded-[1.5rem] border transition-all shrink-0 snap-start ${
                   city === c 
                     ? 'bg-slate-900 border-slate-900 text-white shadow-md' 
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
@@ -203,31 +213,42 @@ export default function SearchPage() {
               </div>
               {providers.map((p, index) => (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05, ease: "easeOut" }}
                   key={p.id}
                   onMouseEnter={() => setHoveredProviderId(p.id)}
                   onMouseLeave={() => setHoveredProviderId(null)}
                 >
-                  <Link to={`/proveedor/${p.id}`} className={`block p-5 border rounded-[1.25rem] shadow-sm hover:shadow-xl hover:-translate-y-1 focus:ring-4 focus:ring-blue-500/20 transition-all cursor-pointer group outline-none overflow-hidden relative ${hoveredProviderId === p.id ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-500/10' : 'bg-white border-slate-200'}`}>
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-indigo-50/20 translate-x-12 -translate-y-8 rounded-full blur-2xl group-hover:bg-blue-100/40 transition-colors"></div>
+                  <Link
+                    to={`/proveedor/${p.id}`}
+                    className={`block p-6 border rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:-translate-y-1.5 focus:ring-4 focus:ring-blue-600/10 transition-all duration-300 cursor-pointer group outline-none overflow-hidden relative ${hoveredProviderId === p.id ? 'bg-blue-50/50 border-blue-200 ring-2 ring-blue-600/5' : 'bg-white border-slate-100'}`}
+                  >
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-600/5 to-indigo-600/5 translate-x-12 -translate-y-8 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-all duration-500"></div>
                     
                     <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="font-extrabold text-slate-900 text-lg leading-tight group-hover:text-blue-600 transition-colors">{p.displayName}</h3>
-                        <span className="bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200/50 text-green-700 px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap shadow-sm">
-                          {p.score} Trust
-                        </span>
+                      <div className="flex justify-between items-start gap-4 mb-4">
+                        <div>
+                          <h3 className="font-[900] text-slate-900 text-xl leading-tight group-hover:text-blue-600 transition-colors mb-1">{p.displayName}</h3>
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-tight">
+                            <MapPin className="w-3 h-3 stroke-[3]" />
+                            {p.city}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-3xl text-[13px] font-[900] shadow-sm border border-emerald-100/50 flex items-center gap-1.5 whitespace-nowrap">
+                            <ShieldCheck className="w-3.5 h-3.5 fill-emerald-500/20" />
+                            {p.score} Trust
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 mt-4">
-                         <div className="text-[13px] font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg inline-flex">
+                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-50">
+                         <div className="text-[13px] font-bold text-slate-500 bg-slate-50 px-4 py-1.5 rounded-[1.5rem] border border-slate-100">
                            {p.category}
                          </div>
-                         <div className="text-[13px] font-semibold text-slate-400 flex items-center gap-1.5">
-                           <MapPin className="w-3.5 h-3.5" />
-                           {p.city}
+                         <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center group-hover:bg-blue-600 transition-colors shadow-lg">
+                           <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
                          </div>
                       </div>
                     </div>
