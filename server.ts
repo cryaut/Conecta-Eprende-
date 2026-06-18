@@ -14,24 +14,11 @@ import {
   formalizationUpdateSchema
 } from "./src/lib/api-schema";
 
-import {
-  providers,
-  quotes,
-  formalizations,
-  updateFormalizationStep
-} from "./src/lib/memory-db";
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Body Parsing Middleware
   app.use(express.json());
-
-  // === API ROUTES (Mounted FIRST) ===
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
 
   // GET Providers Search
   app.get("/api/providers/search", async (req, res) => {
@@ -42,33 +29,44 @@ async function startServer() {
       }
       const { q, city, n, s, e, w } = parsed.data;
       
-      // Map memory providers slightly adjusting their properties to match Prisma types where requested
-      const results = providers.filter(p => {
-        let match = true;
-        if (city) {
-          match = match && p.city.toUpperCase() === city.toUpperCase();
-        }
-        if (q) {
-          const lowerQ = q.toLowerCase();
-          match = match && (p.displayName.toLowerCase().includes(lowerQ) || p.category.toLowerCase().includes(lowerQ));
-        }
+      const filters: any = { AND: [] };
 
-        // Bounding box filter
-        if (n && s && e && w) {
-          const north = parseFloat(n);
-          const south = parseFloat(s);
-          const east = parseFloat(e);
-          const west = parseFloat(w);
+      if (city) {
+        filters.AND.push({ city: { equals: city.toUpperCase() } });
+      }
+      if (q) {
+        filters.AND.push({
+          OR: [
+            { displayName: { contains: q } },
+            { category: { contains: q } },
+            { bio: { contains: q } }
+          ]
+        });
+      }
 
-          match = match && (p.lat <= north && p.lat >= south && p.lng <= east && p.lng >= west);
-        }
+      if (n && s && e && w) {
+        filters.AND.push({ lat: { lte: parseFloat(n), gte: parseFloat(s) } });
+        filters.AND.push({ lng: { lte: parseFloat(e), gte: parseFloat(w) } });
+      }
 
-        return match;
+      if (filters.AND.length === 0) delete filters.AND;
+
+      const results = await prisma.provider.findMany({
+        where: filters,
+        include: { trustScore: true }
       });
 
-      res.json({ success: true, data: results });
+      // Format for frontend
+      const data = results.map(p => ({
+        ...p,
+        score: p.trustScore?.finalScore || 0,
+        photos: p.photos ? JSON.parse(p.photos) : []
+      }));
+
+      res.json({ success: true, data });
     } catch (error) {
-      res.json({ success: false, error: "Internal Error" });
+      console.error(error);
+      res.status(500).json({ success: false, error: "Internal Error" });
     }
   });
 
@@ -76,80 +74,92 @@ async function startServer() {
   app.post("/api/providers/ai-search", async (req, res) => {
     try {
       const parsed = aiSearchProviderSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Solicitud inválida", details: parsed.error.issues });
-      }
-      const { query } = parsed.data;
+      if (!parsed.success) return res.status(400).json({ error: "Solicitud inválida" });
 
+      const { query } = parsed.data;
       const intent = await extractIntent(query);
       
-      const filters: any = {};
-      if (intent.city) {
-        filters.city = intent.city.toUpperCase().trim();
-      }
+      const filters: any = { OR: [] };
+      if (intent.city) filters.city = { equals: intent.city.toUpperCase() };
+
       if (intent.category) {
-        filters.category = { contains: intent.category, mode: 'insensitive' };
-      } else if (intent.keywords && intent.keywords.length > 0) {
-        // Fallback or broader search
-        filters.OR = [
-          { displayName: { contains: intent.keywords[0], mode: 'insensitive' } },
-          { category: { contains: intent.keywords[0], mode: 'insensitive' } }
-        ];
+        filters.OR.push({ category: { contains: intent.category } });
       }
-
-      let results = providers;
-      if (intent.city) {
-         results = results.filter(p => p.city.toUpperCase() === intent.city!.toUpperCase());
+      if (intent.keywords && intent.keywords.length > 0) {
+        intent.keywords.forEach(kw => {
+          filters.OR.push({ displayName: { contains: kw } });
+          filters.OR.push({ bio: { contains: kw } });
+        });
       }
-      if (intent.category) {
-         results = results.filter(p => p.category.toLowerCase().includes(intent.category!.toLowerCase()));
-      } else if (intent.keywords && intent.keywords.length > 0) {
-         const kw = intent.keywords[0].toLowerCase();
-         results = results.filter(p => p.displayName.toLowerCase().includes(kw) || p.category.toLowerCase().includes(kw));
-      }
+      if (filters.OR.length === 0) delete filters.OR;
 
-      res.json({ success: true, intent, data: results });
+      const results = await prisma.provider.findMany({
+        where: filters,
+        include: { trustScore: true }
+      });
 
+      const data = results.map(p => ({
+        ...p,
+        score: p.trustScore?.finalScore || 0,
+        photos: p.photos ? JSON.parse(p.photos) : []
+      }));
+
+      res.json({ success: true, intent, data });
     } catch (error) {
-      res.json({ success: false, error: "Internal Error" });
+      res.status(500).json({ success: false, error: "Internal Error" });
     }
   });
 
   // GET Provider by ID
   app.get("/api/providers/:id", async (req, res) => {
     try {
-      const provider = providers.find(p => p.id === req.params.id);
+      const provider = await prisma.provider.findUnique({
+        where: { id: req.params.id },
+        include: { trustScore: true, reviewsReceived: true }
+      });
       if (!provider) return res.status(404).json({ success: false, message: "No encontrado" });
       
-      res.json({ success: true, data: provider });
+      res.json({
+        success: true,
+        data: {
+          ...provider,
+          score: provider.trustScore?.finalScore || 0,
+          photos: provider.photos ? JSON.parse(provider.photos) : [],
+          reviews: provider.reviewsReceived // Simple mapping for now
+        }
+      });
     } catch (error) {
        res.status(500).json({ success: false });
     }
   });
 
-  // GET Quotes
+  // GET Quotes (Filtered by provider '1' for the demo)
   app.get("/api/quotes", async (req, res) => {
     try {
-      const activeQuotes = quotes.filter(q => q.providerId === "1");
-      res.json({ success: true, data: activeQuotes });
-    } catch (error) {
-       res.json({ success: false });
-    }
-  });
+      const threads = await prisma.quoteThread.findMany({
+        where: { providerId: "1" },
+        include: { messages: true, sender: true }
+      });
 
-  // POST Generate AI Quote Draft (Left intact as it hits external API or mocked local)
-  app.post("/api/quotes/draft", async (req, res) => {
-    try {
-      const parsed = quoteDraftRequestSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Campos inválidos", details: parsed.error.issues });
-      }
-      const { idea, providerName } = parsed.data;
+      const data = threads.map(t => ({
+        id: t.id,
+        providerId: t.providerId,
+        subject: t.subject,
+        clientName: t.sender.name || "Cliente",
+        clientAvatar: (t.sender.name || "C").substring(0, 2).toUpperCase(),
+        status: t.status,
+        date: t.createdAt.toLocaleDateString(),
+        messages: t.messages.map(m => ({
+          id: m.id,
+          author: m.authorId === t.senderId ? 'client' : 'provider',
+          text: m.body,
+          time: m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }))
+      }));
 
-      const draft = await generateQuoteDraft(idea, providerName);
-      res.json({ success: true, draft });
+      res.json({ success: true, data });
     } catch (error) {
-      res.status(500).json({ error: "Ocurrió un error al intentar redactar la cotización. Por favor, intenta de nuevo." });
+       res.status(500).json({ success: false });
     }
   });
 
@@ -157,49 +167,44 @@ async function startServer() {
   app.post("/api/quotes", async (req, res) => {
     try {
       const parsed = quoteRequestSchema.safeParse(req.body);
-      
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Faltan campos obligatorios", details: parsed.error.issues });
-      }
+      if (!parsed.success) return res.status(400).json({ error: "Faltan campos" });
       
       const { providerId, subject, body } = parsed.data;
 
-      const newQuote = {
-        id: "t" + Date.now(),
-        providerId: providerId,
-        subject: subject || "Solicitud de cotización",
-        clientName: "Cliente Nuevo",
-        clientAvatar: "CN",
-        status: "OPEN",
-        date: "Justo ahora",
-        messages: [
-          { id: "m" + Date.now(), author: "client", text: body, time: "Ahora" }
-        ]
-      };
-      
-      quotes.unshift(newQuote);
-      res.json({ success: true, data: newQuote });
-    } catch (error: any) {
-      res.json({ success: false, error: "Internal Error" });
+      const thread = await prisma.quoteThread.create({
+        data: {
+          senderId: 'client-user',
+          providerId,
+          subject: subject || "Solicitud de cotización",
+          status: "OPEN",
+          messages: {
+            create: {
+              authorId: 'client-user',
+              body: body
+            }
+          }
+        },
+        include: { messages: true, sender: true }
+      });
+
+      res.json({ success: true, data: thread });
+    } catch (error) {
+      res.status(500).json({ success: false });
     }
   });
 
   // POST Message to Quote Thread
   app.post("/api/quotes/:id/messages", async (req, res) => {
     try {
-      const threadId = req.params.id;
-      const thread = quotes.find(q => q.id === threadId);
-      if (!thread) return res.status(404).json({ error: "Thread not found" });
-
-      const newMsg = {
-         id: "m" + Date.now(),
-         author: req.body.author || 'provider',
-         text: req.body.text,
-         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      };
-
-      thread.messages.push(newMsg);
-      res.json({ success: true, data: newMsg });
+      const authorId = req.body.author === 'client' ? 'client-user' : 'user-1';
+      const msg = await prisma.quoteMessage.create({
+        data: {
+          threadId: req.params.id,
+          authorId: authorId,
+          body: req.body.text
+        }
+      });
+      res.json({ success: true, data: msg });
     } catch (e) {
       res.status(500).json({ error: "Server Error" });
     }
@@ -208,12 +213,10 @@ async function startServer() {
   // PUT Update Quote Thread Status
   app.put("/api/quotes/:id", async (req, res) => {
     try {
-      const thread = quotes.find(q => q.id === req.params.id);
-      if (!thread) return res.status(404).json({ error: "Thread not found" });
-
-      if (req.body.status) {
-         thread.status = req.body.status;
-      }
+      const thread = await prisma.quoteThread.update({
+        where: { id: req.params.id },
+        data: { status: req.body.status }
+      });
       res.json({ success: true, data: thread });
     } catch (e) {
       res.status(500).json({ error: "Server Error" });
@@ -224,37 +227,40 @@ async function startServer() {
   app.post("/api/providers/enhance-bio", async (req, res) => {
     try {
       const parsed = enhanceBioSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Campos inválidos", details: parsed.error.issues });
-      }
-      const { bio, category } = parsed.data;
-
-      const enhanced = await generateEnhancedBio(bio, category);
+      if (!parsed.success) return res.status(400).json({ error: "Campos inválidos" });
+      const enhanced = await generateEnhancedBio(parsed.data.bio, parsed.data.category);
       res.json({ success: true, bio: enhanced });
     } catch (error) {
-      res.status(500).json({ error: "No pudimos conectar con la Inteligencia Artificial para mejorar el texto. Inténtalo de nuevo más tarde." });
+      res.status(500).json({ error: "IA Error" });
     }
   });
 
   // PUT Update Profile
   app.put("/api/providers/:id", async (req, res) => {
      try {
-        const providerId = req.params.id;
-        const index = providers.findIndex(p => p.id === providerId);
-        if (index === -1) return res.status(404).json({ error: "Provider not found" });
-        
-        providers[index] = { ...providers[index], ...req.body };
-        res.json({ success: true, data: providers[index] });
+        const updated = await prisma.provider.update({
+          where: { id: req.params.id },
+          data: {
+            displayName: req.body.displayName,
+            bio: req.body.bio,
+            category: req.body.category,
+            city: req.body.city
+          }
+        });
+        res.json({ success: true, data: updated });
      } catch(e) {
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({ error: "Update Error" });
      }
   });
 
   // GET Formalization Checklist
   app.get("/api/providers/:id/formalization", async (req, res) => {
     try {
-      const rules = formalizations[req.params.id] || [];
-      res.json({ success: true, data: { steps: rules } });
+      const checklist = await prisma.formalizationChecklist.findUnique({
+        where: { providerId: req.params.id }
+      });
+      const steps = checklist ? JSON.parse(checklist.steps) : [];
+      res.json({ success: true, data: { steps } });
     } catch (error) {
       res.status(500).json({ error: "Internal error" });
     }
@@ -263,44 +269,47 @@ async function startServer() {
   // PUT Formalization Checklist
   app.put("/api/providers/:id/formalization", async (req, res) => {
     try {
-      const parsed = formalizationUpdateSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: "Datos de formalización inválidos", details: parsed.error.issues });
+      const { stepId, status } = req.body;
+      const checklist = await prisma.formalizationChecklist.findUnique({
+        where: { providerId: req.params.id }
+      });
+      if (!checklist) return res.status(404).json({ error: "Not found" });
+
+      let steps = JSON.parse(checklist.steps);
+      let nextIndex = -1;
+      steps = steps.map((s: any, i: number) => {
+        if (s.id === stepId) {
+          s.status = status;
+          if (status === 'completed') nextIndex = i + 1;
+        }
+        return s;
+      });
+
+      if (nextIndex !== -1 && nextIndex < steps.length && steps[nextIndex].status === 'pending') {
+        steps[nextIndex].status = 'current';
       }
 
-      const { stepId, status } = parsed.data;
-      
-      const updated = updateFormalizationStep(req.params.id, stepId, status);
-      
-      if (!updated) {
-         return res.status(404).json({ error: "Step not found" });
-      }
+      await prisma.formalizationChecklist.update({
+        where: { providerId: req.params.id },
+        data: { steps: JSON.stringify(steps) }
+      });
 
-      res.json({ success: true, message: "Estado de formalización actualizado" });
+      res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: "Error interno del servidor al actualizar formalización" });
+      res.status(500).json({ error: "Server error" });
     }
   });
 
-  // === VITE MIDDLEWARE OR STATIC SERVING ===
+  // Vite / Static
   if (process.env.NODE_ENV !== "production") {
-    // Development mode via Vite SSR middleware
-    console.log("Setting up Vite dev server...");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   } else {
-    // Production Mode
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
   }
 
-  // Start the actual express server on host 0.0.0.0
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`\n🚀 Conecta Emprende AI Server running on http://0.0.0.0:${PORT}`);
   });

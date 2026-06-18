@@ -3,34 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-enum City {
-  MANAGUA
-  LEON
-  GRANADA
-  MASAYA
-  ESTELI
-  MATAGALPA
-  BLUEFIELDS
-  JUIGALPA
-  NAGAROTE
-  SAN_JUAN_DE_ORIENTE
-}
-
-enum FormalizationStatus {
-  INFORMAL
-  EN_PROCESO
-  MIPYME_REGISTRADO
-  DGI_ACTIVO
-}
-
-enum Availability {
-  DISPONIBLE
-  OCUPADO
-  NO_DISPONIBLE
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -54,19 +28,19 @@ model Provider {
   displayName         String
   bio                 String?
   category            String
-  subcategories       String[]
-  city                City
+  subcategories       String?
+  city                String
   
-  // Geo extension column (PostGIS setup required manually)
-  location            Unsupported("geography(Point, 4326)")?
+  lat                 Float?
+  lng                 Float?
   
   priceMin            Int?
   priceMax            Int?
-  availability        Availability         @default(DISPONIBLE)
+  availability        String               @default("DISPONIBLE")
   responseTimeHrs     Float?
-  photos              String[]
+  photos              String?
   verified            Boolean              @default(false)
-  formalizationStatus FormalizationStatus  @default(INFORMAL)
+  formalizationStatus String               @default("INFORMAL")
   profileCompleteness Float                @default(0)
   trustScore          TrustScore?
   reviewsReceived     Review[]             @relation("Reviewee")
@@ -91,7 +65,7 @@ model TrustScore {
   scoreFormalization Float
   finalScore         Float
   algorithmVersion   String   @default("v1-rule-based")
-  features           Json?
+  features           String?
   computedAt         DateTime @default(now())
 
   @@index([finalScore])
@@ -143,7 +117,7 @@ model FormalizationChecklist {
   id         String   @id @default(cuid())
   providerId String   @unique
   provider   Provider @relation(fields: [providerId], references: [id])
-  steps      Json
+  steps      String
   updatedAt  DateTime @updatedAt
 }
 

@@ -64,8 +64,8 @@ export default function HomePage() {
               to="/dashboard/perfil"
               className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-5 text-lg font-bold text-slate-800 transition-all bg-white border-2 border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl hover:bg-slate-50 hover:border-slate-200 active:scale-95"
             >
-              <LayoutDashboard className="w-6 h-6 opacity-70" />
-              Soy Proveedor
+              <Sparkles className="w-6 h-6 text-blue-600 opacity-70" />
+              Unirme como Proveedor
             </Link>
           </motion.div>
 
