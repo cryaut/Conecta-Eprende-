@@ -51,7 +51,7 @@ export default function FormalizationPage() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 lg:p-10 mb-8">
+      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 lg:p-10 mb-8">
         <h2 className="font-bold text-xl text-slate-900 mb-8">Progreso actual</h2>
         
         <div className="relative">
@@ -84,7 +84,7 @@ export default function FormalizationPage() {
                     <p className="text-slate-600 text-sm mb-4 max-w-xl">{step.description}</p>
                     
                     {isCurrent && (
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mt-4">
+                      <div className="bg-slate-50 border border-slate-200 rounded-[1.5rem] p-5 mt-4">
                         <h4 className="font-bold text-sm text-slate-900 mb-2">Siguiente acción requerida:</h4>
                         <p className="text-sm text-slate-600 mb-4">Debes presentarte a la administración de rentas con tu cédula y recibo de luz para solicitar tu número RUC.</p>
                         <button 
@@ -104,7 +104,7 @@ export default function FormalizationPage() {
         </div>
       </div>
       
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 text-indigo-900">
+      <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 text-indigo-900">
         <h3 className="font-bold mb-2 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 opacity-70" /> Impacto en tu Trust Score
         </h3>

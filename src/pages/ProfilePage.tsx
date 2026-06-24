@@ -102,7 +102,7 @@ export default function ProfilePage() {
           <div className="h-28 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
           <div className="px-8 pb-8 relative">
             <div className="absolute -top-12 sm:relative sm:-top-16">
-              <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center border-4 border-white shadow-md text-3xl font-extrabold text-slate-800">
+              <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center border-4 border-white shadow-md text-3xl font-extrabold text-slate-800">
                 {formData.displayName.charAt(0)}
               </div>
             </div>
@@ -119,7 +119,7 @@ export default function ProfilePage() {
                       type="text" 
                       value={formData.displayName}
                       onChange={e => setFormData({ ...formData, displayName: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900"
                     />
                   </div>
                 </div>
@@ -131,7 +131,7 @@ export default function ProfilePage() {
                     <select 
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900 appearance-none"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900 appearance-none"
                     >
                       <option value="Diseño Gráfico">Diseño Gráfico</option>
                       <option value="Desarrollo Web">Desarrollo Web</option>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                     <select 
                       value={formData.city}
                       onChange={e => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900 appearance-none"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900 appearance-none"
                     >
                       <option value="Managua">Managua</option>
                       <option value="León">León</option>
@@ -167,7 +167,7 @@ export default function ProfilePage() {
                       type="text" 
                       value={formData.phone}
                       onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-medium text-slate-900"
                     />
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export default function ProfilePage() {
                     value={formData.bio}
                     onChange={e => setFormData({ ...formData, bio: e.target.value })}
                     rows={4}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-[15px] leading-relaxed font-medium text-slate-900 resize-none"
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-[15px] leading-relaxed font-medium text-slate-900 resize-none"
                   ></textarea>
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function ProfilePage() {
                 <button 
                   onClick={handleSave}
                   disabled={saveMutation.isPending}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-70 flex items-center gap-2"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-[1.5rem] transition-all shadow-md active:scale-95 disabled:opacity-70 flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
                   {saveMutation.isPending ? "Guardando..." : "Guardar Cambios"}
